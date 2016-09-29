@@ -158,7 +158,7 @@ class Handler
     /**
      * The resource handler for the opened mailbox (POP3/IMAP/NNTP/etc.).
      *
-     * @var object
+     * @var resource
      */
     private $mailboxHandler = false;
 
@@ -249,8 +249,6 @@ class Handler
         $this->cwsDebug->titleH2('Mode openImapLocal', CwsDebug::VERBOSE_SIMPLE);
         $this->openMode = self::OPEN_MODE_MAILBOX;
 
-        set_time_limit(6000);
-
         $this->mailboxHandler = imap_open(
             $filePath,
             '',
@@ -294,8 +292,6 @@ class Handler
             $opts .= '/'.$this->mailboxCert;
         }
 
-        set_time_limit(6000);
-
         $this->mailboxHandler = imap_open(
             '{'.$this->mailboxHost.':'.$this->mailboxPort.$opts.'}'.$this->mailboxName,
             $this->mailboxUsername,
@@ -331,8 +327,6 @@ class Handler
 
         $this->emlFolder = self::formatUnixPath(rtrim(realpath($emlFolder), '/'));
         $this->cwsDebug->labelValue('Open folder', $this->emlFolder, CwsDebug::VERBOSE_SIMPLE);
-
-        set_time_limit(30000);
 
         $handle = @opendir($this->emlFolder);
         if (!$handle) {
@@ -421,10 +415,11 @@ class Handler
 
         // parsing mails
         if ($this->isMailboxOpenMode()) {
-            for ($mailNo = 1; $mailNo <= $cwsMbhResult->getCounter()->getFetched(); $mailNo++) {
+			$msgUids = imap_sort($this->mailboxHandler, SORTARRIVAL, 0, SE_UID);
+            foreach($msgUids as $mailNo) {
                 $this->cwsDebug->titleH3('Msg #'.$mailNo, CwsDebug::VERBOSE_REPORT);
-                $header = @imap_fetchheader($this->mailboxHandler, $mailNo);
-                $body = @imap_body($this->mailboxHandler, $mailNo);
+                $header = @imap_fetchheader($this->mailboxHandler, $mailNo, FT_UID);
+                $body = @imap_body($this->mailboxHandler, $mailNo, FT_UID);
                 $cwsMbhResult->addMail($this->processMailParsing($mailNo, $header.'\r\n\r\n'.$body));
             }
         } else {
@@ -659,7 +654,7 @@ class Handler
         if ($this->isMailboxOpenMode()) {
             $this->cwsDebug->simple('Process <strong>delete '.$cwsMbhMail->getType().' bounce</strong> message '.$cwsMbhMail->getToken().' in mailbox', CwsDebug::VERBOSE_DEBUG);
 
-            return @imap_delete($this->mailboxHandler, $cwsMbhMail->getToken());
+            return @imap_delete($this->mailboxHandler, $cwsMbhMail->getToken(), FT_UID);
         } elseif ($this->isFileOpenMode()) {
             $this->cwsDebug->simple('Process <strong>delete '.$cwsMbhMail->getType().' bounce</strong> message '.$cwsMbhMail->getToken().' in folder '.$this->emlFolder, CwsDebug::VERBOSE_DEBUG);
 
@@ -682,7 +677,7 @@ class Handler
             $moveFolder = $this->getMailboxName().'.'.self::SUFFIX_BOUNCES_MOVE;
             $this->cwsDebug->simple('Process <strong>move '.$cwsMbhMail->getType().'</strong> in '.$moveFolder.' mailbox', CwsDebug::VERBOSE_DEBUG);
             if ($this->isImapMailboxExists($moveFolder)) {
-                return imap_mail_move($this->mailboxHandler, $cwsMbhMail->getToken(), $moveFolder);
+                return imap_mail_move($this->mailboxHandler, $cwsMbhMail->getToken(), $moveFolder, CP_UID);
             }
         } elseif ($this->isFileOpenMode()) {
             $moveFolder = $this->emlFolder.'/'.self::SUFFIX_BOUNCES_MOVE;
@@ -1217,7 +1212,6 @@ class Handler
     private static function getEmlFile($emlFilePath)
     {
         $emlFile = false;
-        set_time_limit(6000);
 
         if (!file_exists($emlFilePath)) {
             return false;
@@ -2540,7 +2534,7 @@ class Handler
     /**
      * The resource handler for the opened mailbox (POP3/IMAP/NNTP/etc.).
      *
-     * @return the $handler
+     * @return resource $handler
      */
     public function getMailboxHandler()
     {
