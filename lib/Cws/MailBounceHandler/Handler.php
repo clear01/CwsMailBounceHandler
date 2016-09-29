@@ -471,7 +471,7 @@ class Handler
      */
     private function processMailParsing($token, $content)
     {
-        $cwsMbhMail = new Mail();
+        $cwsMbhMail = Mail::createLazyObject($this->mailboxHandler, $token);
         $cwsMbhMail->setToken($token);
 
         // format content

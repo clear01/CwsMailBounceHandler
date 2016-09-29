@@ -46,9 +46,24 @@ class Mail
      *
      * @see Cws\MailBounceHandler\Models\Recipient object
      *
-     * @var array
+     * @var Recipient[]
      */
     private $recipients;
+
+	/** @var  object */
+	protected $headers = null;
+
+	/** @var  string */
+	protected $body = null;
+
+	protected $messageUid = null;
+	protected $imapResource = null;
+
+	static function createLazyObject($imapResource, $messageUid) {
+		$instance = new self;
+		$instance->setLazyAttributes($imapResource, $messageUid);
+		return $instance;
+	}
 
     public function __construct()
     {
@@ -58,6 +73,11 @@ class Mail
         $this->type = null;
         $this->recipients = [];
     }
+
+    private function setLazyAttributes($imapResource, $messageUid) {
+		$this->imapResource = $imapResource;
+		$this->messageUid = $messageUid;
+	}
 
     public function getToken()
     {
@@ -108,4 +128,23 @@ class Mail
     {
         $this->recipients[] = $recipient;
     }
+
+	function __sleep()
+	{
+		$this->fetchBody();
+		$this->messageUid = null;
+		$this->imapResource = null;
+	}
+
+	protected function fetchBody() {
+		if(!$this->body) {
+			$this->body = imap_body($this->imapResource, $this->messageUid, FT_UID);
+		}
+		return $this->body;
+	}
+
+	protected function fetchHeaders() {
+		return imap_rfc822_parse_headers($this->fetchBody());
+	}
+
 }
