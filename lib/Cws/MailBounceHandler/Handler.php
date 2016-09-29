@@ -452,8 +452,7 @@ class Handler
         $this->cwsDebug->titleH2('Ending processMails', CwsDebug::VERBOSE_SIMPLE);
         if ($this->isMailboxOpenMode()) {
             $this->cwsDebug->simple('Closing mailbox, and purging messages', CwsDebug::VERBOSE_SIMPLE);
-            @imap_close($this->mailboxHandler);
-        }
+	    }
 
         $this->cwsDebug->dump('Counter result', $cwsMbhResult->getCounter(), CwsDebug::VERBOSE_SIMPLE);
         $this->cwsDebug->dump('Full result', $cwsMbhResult, CwsDebug::VERBOSE_REPORT);
@@ -471,7 +470,7 @@ class Handler
      */
     private function processMailParsing($token, $content)
     {
-        $cwsMbhMail = Mail::createLazyObject($this->mailboxHandler, $token);
+        $cwsMbhMail = Mail::createLazyObject($this->mailboxHandler);
         $cwsMbhMail->setToken($token);
 
         // format content

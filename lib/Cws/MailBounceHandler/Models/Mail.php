@@ -56,12 +56,11 @@ class Mail
 	/** @var  string */
 	protected $body = null;
 
-	protected $messageUid = null;
 	protected $imapResource = null;
 
-	static function createLazyObject($imapResource, $messageUid) {
+	static function createLazyObject($imapResource) {
 		$instance = new self;
-		$instance->setLazyAttributes($imapResource, $messageUid);
+		$instance->setLazyAttributes($imapResource);
 		return $instance;
 	}
 
@@ -74,9 +73,8 @@ class Mail
         $this->recipients = [];
     }
 
-    private function setLazyAttributes($imapResource, $messageUid) {
+    private function setLazyAttributes($imapResource) {
 		$this->imapResource = $imapResource;
-		$this->messageUid = $messageUid;
 	}
 
     public function getToken()
@@ -132,13 +130,12 @@ class Mail
 	function __sleep()
 	{
 		$this->getBody();
-		$this->messageUid = null;
 		$this->imapResource = null;
 	}
 
 	public function getBody() {
 		if(!$this->body) {
-			$this->body = imap_body($this->imapResource, $this->messageUid, FT_UID);
+			$this->body = imap_body($this->imapResource, $this->token, FT_UID);
 		}
 		return $this->body;
 	}
