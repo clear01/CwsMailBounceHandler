@@ -131,20 +131,20 @@ class Mail
 
 	function __sleep()
 	{
-		$this->fetchBody();
+		$this->getBody();
 		$this->messageUid = null;
 		$this->imapResource = null;
 	}
 
-	protected function fetchBody() {
+	protected function getBody() {
 		if(!$this->body) {
 			$this->body = imap_body($this->imapResource, $this->messageUid, FT_UID);
 		}
 		return $this->body;
 	}
 
-	protected function fetchHeaders() {
-		return imap_rfc822_parse_headers($this->fetchBody());
+	protected function getHeaders() {
+		return imap_rfc822_parse_headers($this->getBody());
 	}
 
 }
