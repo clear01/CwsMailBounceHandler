@@ -136,14 +136,14 @@ class Mail
 		$this->imapResource = null;
 	}
 
-	protected function getBody() {
+	public function getBody() {
 		if(!$this->body) {
 			$this->body = imap_body($this->imapResource, $this->messageUid, FT_UID);
 		}
 		return $this->body;
 	}
 
-	protected function getHeaders() {
+	public function getHeaders() {
 		return imap_rfc822_parse_headers($this->getBody());
 	}
 
